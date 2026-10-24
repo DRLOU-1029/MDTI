@@ -253,6 +253,13 @@
   .tcard .tc-line { font-size: 12px; color: var(--muted); line-height: 1.5; }
 
   .foot { text-align: center; font-size: 12px; color: var(--muted); margin-top: 18px; line-height: 1.7; }
+  .gh-link {
+    display: inline-block; margin-top: 10px; padding: 9px 16px; border-radius: 999px;
+    border: 1px solid var(--line); background: #fff; color: var(--ink);
+    font-size: 12px; font-weight: 700; text-decoration: none;
+    transition: border-color .15s, background .15s;
+  }
+  .gh-link:hover { border-color: var(--red); background: #FFF7F0; color: var(--red); }
   .toast {
     position: fixed; left: 50%; bottom: 32px; transform: translate(-50%, 20px);
     background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 999px;
@@ -338,6 +345,11 @@
       </div>
       <button class="btn" id="start">开始测试</button>
       <p class="foot">娱乐向测试，不构成心理、医疗或营养建议。<br>所有人设均为玩梗，不鼓励暴饮暴食或食物浪费。<br>餐品信息与价格以麦当劳官方渠道为准。</p>
+      <p class="foot">
+        <a class="gh-link" href="https://github.com/DRLOU-1029/MDTI" target="_blank" rel="noopener">
+          ★ 在 GitHub 上看看这个项目
+        </a>
+      </p>
     </section>
 
     <!-- 答题 -->

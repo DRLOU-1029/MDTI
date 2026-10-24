@@ -33,7 +33,7 @@ MDTI（McDonald's Type Indicator）是一个跑在麦当劳 MCP 上的 Agent Ski
 无第三方依赖，只需要 Python 3.9+。
 
 ```bash
-git clone <你的仓库地址> mdti
+git clone https://github.com/DRLOU-1029/MDTI.git mdti
 cd mdti
 
 # 1. 配置 MCP Token（写到 .env，不要提交）
