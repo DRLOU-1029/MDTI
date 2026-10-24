@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MDTI · 麦门点餐人格</title>
+<style>
+  :root {
+    --red: #DA291C;
+    --red-dark: #B01E13;
+    --yellow: #FFC72C;
+    --ink: #1B1B1B;
+    --muted: #6B6B6B;
+    --line: #E8E1D6;
+    --bg: #FBF7F0;
+    --card: #FFFFFF;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  .stage { width: 100%; max-width: 520px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 28px 24px;
+    box-shadow: 0 12px 40px rgba(27, 27, 27, .07);
+  }
+  .hidden { display: none !important; }
+
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .logo {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--red); color: var(--yellow);
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 18px; letter-spacing: -.5px;
+  }
+  .brand-name { font-size: 13px; letter-spacing: 2px; color: var(--muted); font-weight: 600; }
+
+  h1 { font-size: 30px; line-height: 1.25; margin: 0 0 10px; letter-spacing: -.5px; }
+  h1 em { font-style: normal; color: var(--red); }
+  .sub { color: var(--muted); font-size: 15px; margin: 0 0 22px; }
+  .meta { display: flex; gap: 18px; color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .meta b { color: var(--ink); font-weight: 700; }
+
+  button { font-family: inherit; cursor: pointer; border: none; }
+  .btn {
+    width: 100%; padding: 15px 18px; border-radius: 14px;
+    background: var(--red); color: #fff; font-size: 16px; font-weight: 700;
+    transition: transform .08s ease, background .15s ease;
+  }
+  .btn:hover { background: var(--red-dark); }
+  .btn:active { transform: scale(.985); }
+  .btn.ghost {
+    background: transparent; color: var(--ink);
+    border: 1px solid var(--line); font-weight: 600;
+  }
+  .btn.ghost:hover { background: #F6F1E8; }
+
+  /* 进度 */
+  .progress { display: flex; gap: 5px; margin-bottom: 26px; }
+  .dot { flex: 1; height: 4px; border-radius: 2px; background: var(--line); transition: background .25s; }
+  .dot.done { background: var(--red); }
+  .dot.now { background: var(--yellow); }
+
+  .qnum { font-size: 12px; letter-spacing: 2px; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
+  .qtext { font-size: 21px; font-weight: 700; line-height: 1.45; margin: 0 0 24px; letter-spacing: -.2px; }
+
+  .opt {
+    width: 100%; text-align: left; padding: 17px 18px; margin-bottom: 12px;
+    background: #fff; border: 1.5px solid var(--line); border-radius: 14px;
+    font-size: 16px; color: var(--ink); line-height: 1.45;
+    display: flex; align-items: center; gap: 14px;
+    transition: border-color .15s, background .15s, transform .08s;
+  }
+  .opt:hover { border-color: var(--red); background: #FFF9F2; }
+  .opt:active { transform: scale(.99); }
+  .key {
+    flex: none; width: 26px; height: 26px; border-radius: 8px;
+    background: #F4EEE4; color: var(--muted);
+    display: grid; place-items: center; font-size: 13px; font-weight: 800;
+  }
+  .opt:hover .key { background: var(--red); color: #fff; }
+
+  /* 结果 */
+  .rtype { font-size: 13px; letter-spacing: 3px; color: var(--muted); font-weight: 700; }
+  .rcode {
+    font-size: 44px; font-weight: 800; letter-spacing: 6px;
+    color: var(--red); margin: 6px 0 2px; line-height: 1.1;
+  }
+  .rascii { font-size: 13px; letter-spacing: 4px; color: var(--muted); font-weight: 600; margin-bottom: 14px; }
+  .rname { font-size: 26px; font-weight: 800; margin: 0 0 10px; }
+  .rname::before, .rname::after { content: "「"; color: var(--yellow); }
+  .rname::after { content: "」"; }
+  .rtag { font-size: 16px; color: #333; margin: 0 0 22px; padding-left: 14px; border-left: 3px solid var(--yellow); }
+
+  .kv { display: grid; gap: 10px; margin-bottom: 22px; }
+  .kv-row { display: flex; gap: 12px; font-size: 14px; align-items: baseline; }
+  .kv-k { flex: none; width: 44px; color: var(--muted); font-weight: 600; }
+  .kv-v { color: var(--ink); }
+
+  .axes { display: grid; gap: 12px; margin-bottom: 24px; padding-top: 20px; border-top: 1px dashed var(--line); }
+  .axis { display: grid; grid-template-columns: 74px 1fr 62px; align-items: center; gap: 10px; font-size: 13px; }
+  .axis-label { color: var(--muted); }
+  .track { height: 7px; background: #F1EBE1; border-radius: 4px; overflow: hidden; }
+  .fill { height: 100%; background: var(--red); border-radius: 4px; transition: width .5s cubic-bezier(.2,.8,.2,1); }
+  .axis-val { text-align: right; font-weight: 700; }
+  .axis-val small { color: var(--muted); font-weight: 500; }
+
+  .actions { display: grid; gap: 10px; }
+
+  /* 按人格点一单 */
+  .order { margin: 0 0 16px; padding: 16px; border: 1.5px dashed var(--line); border-radius: 14px; background: #FFFCF6; }
+  .order-row { display: flex; gap: 8px; }
+  .city-input {
+    width: 100%; padding: 15px 16px; border: 1.5px solid var(--line);
+    border-radius: 12px; font-size: 16px; font-family: inherit; color: var(--ink); background: #fff;
+  }
+  .city-input:focus { outline: none; border-color: var(--red); }
+  .order .btn { width: auto; padding: 13px 16px; white-space: nowrap; font-size: 15px; }
+  .order .btn:disabled { opacity: .6; }
+  .order-out { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .o-store { font-weight: 700; margin-bottom: 4px; }
+  .o-items { font-size: 14px; color: #333; margin-bottom: 8px; }
+  .o-price { font-size: 28px; font-weight: 800; color: var(--red); }
+  .o-price s { font-size: 14px; color: var(--muted); font-weight: 500; margin-left: 6px; }
+  .o-coupon { font-size: 13px; color: var(--red); margin-top: 4px; }
+  .o-reason { font-size: 14px; margin-top: 8px; padding-left: 12px; border-left: 3px solid var(--yellow); }
+  .o-meta { font-size: 12px; color: var(--muted); margin-top: 10px; }
+  .o-nutrition { font-size: 13px; color: #444; margin-top: 8px; background: #FFF6E8; border-radius: 8px; padding: 8px 10px; }
+  .o-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* 预算规划 */
+  .plan { margin: 0 0 16px; padding: 16px; border: 1.5px dashed var(--line); border-radius: 14px; background: #FFFCF6; }
+  .plan-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+  .plan-label { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .plan-num { font-size: 24px; font-weight: 800; color: var(--red); }
+  .slider {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+    border-radius: 3px; background: #EFE7DA; outline: none; margin: 6px 0;
+  }
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--red); border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,.22); cursor: pointer;
+  }
+  .slider::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%; background: var(--red);
+    border: 3px solid #fff; cursor: pointer;
+  }
+  .plan-scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+  .plan-row { display: block; margin-bottom: 10px; }
+  .loc-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .btn.sm { width: auto; flex: 1; padding: 11px 12px; font-size: 13px; border-radius: 10px; }
+  .store-list { margin-bottom: 12px; display: grid; gap: 6px; max-height: 216px; overflow-y: auto; }
+  .store-item {
+    padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px;
+    background: #fff; cursor: pointer; transition: border-color .15s, background .15s;
+  }
+  .store-item.on { border-color: var(--red); background: #FFF7F0; }
+  .si-name { display: block; font-size: 13px; font-weight: 700; }
+  .si-meta { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .si-closed { font-weight: 400; color: var(--muted); font-size: 11px; }
+  .store-empty { font-size: 12px; color: var(--muted); }
+  .plan-hint { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+  .plan-out { margin-top: 12px; display: grid; gap: 10px; }
+  .plan-store {
+    margin-top: 14px; padding: 10px 12px; background: #F7F2E9;
+    border-radius: 10px; font-size: 12px; line-height: 1.6;
+  }
+  .ps-name { font-weight: 700; font-size: 13px; color: var(--ink); }
+  .ps-meta { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .plan-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 12px; }
+  .opt-card { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .opt-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .opt-tag { font-size: 11px; font-weight: 700; color: var(--red); background: #FFEFEA; padding: 2px 8px; border-radius: 999px; }
+  .opt-delta { font-size: 13px; font-weight: 700; }
+  .opt-delta.under { color: #1E7F4F; }
+  .opt-delta.over { color: var(--red); }
+  .opt-items { font-size: 14px; color: #333; line-height: 1.5; }
+  .opt-price { font-size: 22px; font-weight: 800; color: var(--ink); margin-top: 2px; }
+  .opt-price s { font-size: 13px; color: var(--muted); font-weight: 500; margin-left: 6px; }
+  .opt-coupon { font-size: 12px; color: var(--red); margin-top: 2px; }
+  .opt-nut { font-size: 12px; color: #444; background: #FFF6E8; border-radius: 8px; padding: 6px 8px; margin-top: 8px; }
+  .opt-sub-line { font-size: 11px; color: #B07A00; margin-top: 4px; line-height: 1.6; padding: 0 2px; }
+  .opt-sub { display: block; font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .opt-parts { display: block; font-size: 10px; color: #666; margin-top: 3px; line-height: 1.7; }
+  .opt-reason { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .sort-row { display: flex; gap: 6px; margin-top: 12px; }
+  .seg {
+    flex: 1; padding: 7px 0; font-size: 12px; font-weight: 600;
+    border-radius: 999px; background: #F4EEE4; color: var(--muted);
+    transition: background .15s, color .15s;
+  }
+  .seg.on { background: var(--red); color: #fff; }
+  .opt-meta { display: flex; gap: 10px; font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .linkbtn {
+    margin-top: 10px; padding: 4px 0; background: none; color: var(--red);
+    font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px;
+  }
+  .linkbtn:disabled { color: var(--muted); text-decoration: none; }
+  .pk-item { margin-bottom: 8px; }
+  .pk-name { font-size: 14px; color: #333; font-weight: 600; }
+  details.rd { margin: 4px 0 0; }
+  details.rd summary {
+    font-size: 12px; color: var(--muted); cursor: pointer; list-style: none;
+    display: inline-flex; align-items: center; gap: 4px; user-select: none;
+  }
+  details.rd summary::-webkit-details-marker { display: none; }
+  details.rd summary::before { content: "▸"; font-size: 10px; transition: transform .15s; }
+  details.rd[open] summary::before { transform: rotate(90deg); }
+  details.rd summary:hover { color: var(--red); }
+  .rd-row { display: flex; gap: 10px; font-size: 12px; padding: 5px 0 5px 14px; border-left: 2px solid var(--line); margin: 4px 0 0 2px; }
+  .rd-k { flex: none; width: 84px; color: var(--muted); }
+  .rd-v { color: #333; }
+  .rd-v em { display: block; font-style: normal; color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .rd-v i { font-style: normal; color: var(--red); font-size: 11px; margin-left: 3px; }
+  .rd-kcal { font-style: normal; color: var(--red); font-size: 10px; margin-left: 5px; font-weight: 600; }
+  .rd-proxy { display: block; font-size: 10px; color: #B07A00; margin-top: 1px; }
+  .rd-block { margin-top: 10px; }
+  .rd-head { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+  .rd-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .rd-choice {
+    padding: 5px 9px; border-radius: 999px; border: 1px solid var(--line);
+    background: #fff; font-size: 11px; color: #444; font-family: inherit;
+    transition: border-color .15s, background .15s, color .15s;
+  }
+  .rd-choice:hover { border-color: var(--red); }
+  .rd-choice.on { border-color: var(--red); background: #FFEFEA; color: var(--red); font-weight: 700; }
+  .rd-choice b { font-weight: 600; margin-left: 3px; font-size: 10px; color: #B07A00; }
+  .rd-choice.on b { color: var(--red); }
+
+  /* 十六型 */
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 16px; }
+  .tcard {
+    border: 1.5px solid var(--line); border-radius: 12px; padding: 12px;
+    background: #fff; transition: border-color .15s;
+  }
+  .tcard.on { border-color: var(--red); background: #FFF7F0; }
+  .tcard .tc-name { font-weight: 800; font-size: 14px; margin-bottom: 2px; }
+  .tcard .tc-code { font-size: 11px; letter-spacing: 2px; color: var(--muted); margin-bottom: 6px; }
+  .tcard .tc-line { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  .foot { text-align: center; font-size: 12px; color: var(--muted); margin-top: 18px; line-height: 1.7; }
+  .toast {
+    position: fixed; left: 50%; bottom: 32px; transform: translate(-50%, 20px);
+    background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 999px;
+    font-size: 13px; opacity: 0; pointer-events: none; transition: all .25s;
+  }
+  .toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+  .demo-banner {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+    background: var(--ink); color: var(--yellow); text-align: center;
+    font-size: 12px; font-weight: 600; padding: 8px 12px; letter-spacing: .5px;
+  }
+  body.demo { padding-top: 48px; }
+
+  /* 购物车 */
+  .add-btn {
+    width: 100%; margin-top: 10px; padding: 9px 0; border-radius: 10px;
+    border: 1.5px dashed var(--red); background: #fff; color: var(--red);
+    font-size: 13px; font-weight: 700; font-family: inherit;
+  }
+  .add-btn:hover { background: #FFF3EF; }
+  .cart-btn {
+    position: fixed; right: 18px; bottom: 22px; z-index: 40;
+    padding: 12px 18px; border-radius: 999px; border: none;
+    background: var(--red); color: #fff; font-size: 14px; font-weight: 700;
+    box-shadow: 0 8px 24px rgba(218,41,28,.35); font-family: inherit;
+  }
+  .cart-overlay {
+    position: fixed; inset: 0; z-index: 50; background: rgba(20,16,12,.45);
+    display: flex; align-items: flex-end; justify-content: center; padding: 0;
+  }
+  @media (min-width: 560px) { .cart-overlay { align-items: center; padding: 20px; } }
+  .cart-box {
+    width: 100%; max-width: 520px; background: #fff; border-radius: 18px 18px 0 0;
+    padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); max-height: 82vh;
+    display: flex; flex-direction: column;
+  }
+  @media (min-width: 560px) { .cart-box { border-radius: 18px; } }
+  .cart-head { display: flex; justify-content: space-between; align-items: center; font-size: 16px; margin-bottom: 12px; }
+  .cart-close { background: none; border: none; font-size: 24px; line-height: 1; color: var(--muted); cursor: pointer; }
+  .cart-items { overflow-y: auto; flex: 1; }
+  .cart-row { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .cr-main { flex: 1; min-width: 0; }
+  .cr-name { font-size: 13px; font-weight: 600; }
+  .cr-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .cr-del { background: none; border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; font-size: 11px; color: var(--muted); cursor: pointer; }
+  .cart-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 24px 0; }
+  .cart-foot { margin-top: 14px; display: grid; gap: 8px; }
+  .cart-total { font-size: 14px; }
+  .cart-total b { font-size: 22px; color: var(--red); }
+  .cart-ways { display: flex; gap: 14px; font-size: 13px; color: #444; }
+  .order-ok { font-size: 14px; font-weight: 700; color: #1E7F4F; }
+  .order-tip { font-size: 11px; color: var(--muted); }
+  a.btn.pay { display: block; text-align: center; text-decoration: none; }
+  .cart-notice {
+    background: #FDECEA; color: #B3261E; border-radius: 10px; padding: 10px 12px;
+    font-size: 12px; line-height: 1.6; margin-bottom: 10px;
+  }
+  .cart-last {
+    margin-top: 14px; padding: 12px; border: 1px solid var(--line);
+    border-radius: 10px; background: #FAF6EF;
+  }
+  .lo-head { font-size: 12px; font-weight: 700; }
+  .lo-meta { font-size: 11px; color: var(--muted); margin-top: 2px; word-break: break-all; }
+  .lo-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .lo-actions .btn { width: auto; flex: 1; padding: 9px 0; font-size: 12px; border-radius: 9px; }
+</style>
+</head>
+<body>
+<div id="demo-banner" class="demo-banner hidden">🧪 演示模式 · 数据为脱敏快照，不会真实下单</div>
+<div class="stage">
+  <div class="card">
+
+    <!-- 首页 -->
+    <section id="intro">
+      <div class="brand"><div class="logo">M</div><div class="brand-name">MDTI</div></div>
+      <h1>你点麦当劳<br>是什么<em>人格</em>？</h1>
+      <p class="sub">12 道二选一，四轴十六型。测完不是给你一个标签，是给之后每一次点餐换一个 agent。</p>
+      <div class="meta">
+        <span><b>12</b> 题</span>
+        <span><b>16</b> 型</span>
+        <span><b>约 60</b> 秒</span>
+      </div>
+      <button class="btn" id="start">开始测试</button>
+      <p class="foot">娱乐向测试，不构成心理诊断。<br>类型由确定性脚本算出，同一组答案永远得到同一型。</p>
+    </section>
+
+    <!-- 答题 -->
+    <section id="quiz" class="hidden">
+      <div class="progress" id="progress"></div>
+      <div class="qnum" id="qnum"></div>
+      <p class="qtext" id="qtext"></p>
+      <div id="options"></div>
+    </section>
+
+    <!-- 结果 -->
+    <section id="result" class="hidden">
+      <div class="rtype">你的麦门人格</div>
+      <div class="rcode" id="r-code"></div>
+      <div class="rascii" id="r-ascii"></div>
+      <h2 class="rname" id="r-name"></h2>
+      <p class="rtag" id="r-tag"></p>
+
+      <div class="kv">
+        <div class="kv-row"><span class="kv-k">招牌</span><span class="kv-v" id="r-action"></span></div>
+        <div class="kv-row"><span class="kv-k">雷区</span><span class="kv-v" id="r-taboo"></span></div>
+      </div>
+
+      <div class="axes" id="r-axes"></div>
+
+      <div class="plan">
+        <div class="plan-head">
+          <span class="plan-label">预算</span>
+          <span class="plan-num">¥<b id="budget-val">30</b></span>
+        </div>
+        <input id="budget" class="slider" type="range" min="10" max="200" step="5" value="30">
+        <div class="plan-scale"><span>¥10</span><span>¥200</span></div>
+        <div class="plan-row">
+          <input id="city" class="city-input" placeholder="城市或完整地址，例如 上海 / 上海市静安区南京西路" value="上海">
+        </div>
+        <div class="loc-row">
+          <button class="btn ghost sm" id="find">查附近门店</button>
+        </div>
+        <div id="store-list" class="store-list hidden"></div>
+        <button class="btn" id="go">出方案</button>
+        <button class="linkbtn" id="bind">先去麦麦省一键领券</button>
+        <div id="plan-hint" class="plan-hint">先定预算，再点「出方案」</div>
+        <div class="sort-row" id="sort-row">
+          <button class="seg on" data-sort="budget">推荐</button>
+          <button class="seg" data-sort="price">价格</button>
+          <button class="seg" data-sort="kcal">热量</button>
+          <button class="seg" data-sort="count">样数</button>
+        </div>
+        <div id="plan-store" class="plan-store hidden"></div>
+        <div id="plan-out" class="plan-out"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="share">复制分享文案</button>
+        <button class="btn ghost" id="all">看全部十六型</button>
+        <button class="btn ghost" id="again">再测一次</button>
+      </div>
+    </section>
+
+    <!-- 十六型 -->
+    <section id="types" class="hidden">
+      <h1 style="font-size:22px;margin-bottom:6px">十六型图谱</h1>
+      <p class="sub" style="margin-bottom:8px">你是哪一型？</p>
+      <div class="grid" id="grid"></div>
+      <div class="actions" style="margin-top:18px">
+        <button class="btn ghost" id="back">返回结果</button>
+      </div>
+    </section>
+
+  </div>
+</div>
+<button id="cart-btn" class="cart-btn hidden">🛒</button>
+<div id="cart-panel" class="cart-overlay hidden">
+  <div class="cart-box">
+    <div class="cart-head">
+      <b>购物车</b>
+      <button class="cart-close" id="cart-close">×</button>
+    </div>
+    <div id="cart-notice" class="cart-notice hidden"></div>
+    <div id="cart-items" class="cart-items"></div>
+    <div id="cart-last" class="cart-last hidden"></div>
+    <div id="cart-foot" class="cart-foot"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const show = (id) => ["intro", "quiz", "result", "types"].forEach(
+    (s) => $(s).classList.toggle("hidden", s !== id)
+  );
+
+  let questions = [];
+  let types = {};
+  let answers = [];
+  let current = null;
+  let planLoaded = false;
+  let lastPlan = null;
+  let sortMode = "budget";
+  let selectedStore = null;
+  let cart = [];
+  let lastOrder = null;
+
+  function toast(msg) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("on");
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove("on"), 1800);
+  }
+
+  async function checkMode() {
+    try {
+      const res = await fetch("/api/mode");
+      const data = await res.json();
+      if (data.demo) {
+        $("demo-banner").classList.remove("hidden");
+        document.body.classList.add("demo");
+      }
+    } catch (_) { /* 拿不到就按正式模式展示 */ }
+  }
+
+  async function boot() {
+    loadCart();
+    loadLastOrder();
+    renderCartButton();
+    checkMode();
+    show("intro");
+    try {
+      const [q, t] = await Promise.all([
+        fetch("/api/questions").then((r) => r.json()),
+        fetch("/api/types").then((r) => r.json()),
+      ]);
+      questions = q.questions;
+      types = t;
+    } catch (err) {
+      toast("加载失败：" + err.message);
+    }
+  }
+
+  function renderProgress() {
+    const box = $("progress");
+    box.innerHTML = "";
+    questions.forEach((_, i) => {
+      const d = document.createElement("div");
+      d.className = "dot" + (i < answers.length ? " done" : (i === answers.length ? " now" : ""));
+      box.appendChild(d);
+    });
+  }
+
+  function renderQuestion() {
+    const idx = answers.length;
+    const q = questions[idx];
+    $("qnum").textContent = `第 ${idx + 1} / ${questions.length} 题`;
+    $("qtext").textContent = q.text;
+
+    const box = $("options");
+    box.innerHTML = "";
+    q.options.forEach((opt) => {
+      const b = document.createElement("button");
+      b.className = "opt";
+      const k = document.createElement("span");
+      k.className = "key";
+      k.textContent = opt.key;
+      const s = document.createElement("span");
+      s.textContent = opt.text;
+      b.append(k, s);
+      b.addEventListener("click", () => answer(opt.key));
+      box.appendChild(b);
+    });
+    renderProgress();
+  }
+
+  function answer(key) {
+    answers.push(key);
+    if (answers.length < questions.length) {
+      renderQuestion();
+    } else {
+      renderProgress();
+      submit();
+    }
+  }
+
+  async function submit() {
+    try {
+      const res = await fetch("/api/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "评分失败");
+      current = data;
+      renderResult(data);
+      show("result");
+    } catch (err) {
+      toast("评分失败：" + err.message);
+    }
+  }
+
+  function renderResult(r) {
+    $("r-code").textContent = r.code;
+    $("r-ascii").textContent = r.ascii;
+    $("r-name").textContent = r.name;
+    $("r-tag").textContent = r.tagline;
+    $("r-action").textContent = r.action;
+    $("r-taboo").textContent = r.taboo;
+
+    const box = $("r-axes");
+    box.innerHTML = "";
+    r.axes.forEach((a) => {
+      const row = document.createElement("div");
+      row.className = "axis";
+
+      const label = document.createElement("span");
+      label.className = "axis-label";
+      label.textContent = a.label;
+
+      const track = document.createElement("div");
+      track.className = "track";
+      const fill = document.createElement("div");
+      fill.className = "fill";
+      fill.style.width = "0%";
+      track.appendChild(fill);
+      requestAnimationFrame(() => { fill.style.width = a.percent + "%"; });
+
+      const val = document.createElement("span");
+      val.className = "axis-val";
+      val.innerHTML = `${a.winner} ${a.percent}% <small>${a.strength}</small>`;
+
+      row.append(label, track, val);
+      box.appendChild(row);
+    });
+
+    // 预算：默认值由性格给
+    const def = (types[r.code] && types[r.code].budget) || 30;
+    $("budget").value = def;
+    $("budget-val").textContent = def;
+    planLoaded = false;
+    lastPlan = null;
+    sortMode = "budget";
+    document.querySelectorAll("#sort-row .seg").forEach((b) => {
+      b.classList.toggle("on", b.dataset.sort === "budget");
+    });
+    $("plan-out").innerHTML = "";
+    $("plan-store").classList.add("hidden");
+    selectedStore = null;
+    $("store-list").classList.add("hidden");
+    $("store-list").innerHTML = "";
+    $("plan-hint").textContent = "填城市或完整地址，再点「出方案」";
+  }
+
+  function shareText() {
+    if (!current) return "";
+    return `我是「${current.name}」· ${current.code}（${current.ascii}）\n${current.tagline}\n—— MDTI 麦门点餐人格`;
+  }
+
+  async function copyShare() {
+    const text = shareText();
+    try {
+      await navigator.clipboard.writeText(text);
+      toast("已复制，去发朋友圈吧");
+    } catch (_) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      toast("已复制");
+    }
+  }
+
+  function renderTypes() {
+    const box = $("grid");
+    box.innerHTML = "";
+    const order = Object.keys(types).sort((a, b) => {
+      const pa = types[a].ascii, pb = types[b].ascii;
+      return pa.localeCompare(pb);
+    });
+    order.forEach((code) => {
+      const t = types[code];
+      const el = document.createElement("div");
+      el.className = "tcard" + (current && current.code === code ? " on" : "");
+      el.innerHTML =
+        `<div class="tc-name">${t.name}</div>` +
+        `<div class="tc-code">${code} · ${t.ascii}</div>` +
+        `<div class="tc-line">${t.tagline}</div>`;
+      box.appendChild(el);
+    });
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]));
+  }
+
+  function renderPicked(items, optIndex) {
+    return items.map((item, itemIndex) => {
+      const rounds = item.rounds || [];
+      if (!rounds.length) {
+        const kcal = item.kcal ? `<i class="rd-kcal">${item.kcal} kcal</i>` : "";
+        const proxy = item.proxy ? `<span class="rd-proxy">＊按「${esc(item.proxy)}」估算</span>` : "";
+        return `<div class="pk-item"><div class="pk-name">${esc(item.name)} ×${item.quantity}${kcal}${proxy}</div></div>`;
+      }
+      const blocks = rounds.map((r) => {
+        const choices = r.choices || [];
+        const chips = choices.map((c) => {
+          const on = c.selected ? " on" : "";
+          const diff = c.diff && c.diff !== "+ ¥0" ? `<b>${esc(c.diff)}</b>` : "";
+          return `<button type="button" class="rd-choice${on}"`
+            + ` data-opt="${optIndex}" data-item="${itemIndex}"`
+            + ` data-round="${esc(r.id)}" data-code="${esc(c.code)}">`
+            + `${esc(c.name)}${diff}</button>`;
+        }).join("");
+        const kcal = r.kcal ? `<span class="rd-kcal">${r.kcal} kcal</span>` : "";
+        const proxy = r.proxy ? `<span class="rd-proxy">＊按「${esc(r.proxy)}」估算</span>` : "";
+        return `<div class="rd-block">`
+          + `<div class="rd-head"><span>${esc(r.name)}</span>${kcal}</div>`
+          + `<div class="rd-chips">${chips}</div>${proxy}</div>`;
+      }).join("");
+      return `<div class="pk-item"><div class="pk-name">${esc(item.name)} ×${item.quantity}</div>`
+        + `<details class="rd"><summary>换套餐里的东西（${rounds.length} 项）</summary>${blocks}</details></div>`;
+    }).join("");
+  }
+
+  function selectionsOf(item) {
+    const out = {};
+    (item.rounds || []).forEach((r) => {
+      const chosen = (r.choices || []).find((c) => c.selected) || (r.choices || [])[0];
+      if (r.id != null && chosen) out[String(r.id)] = chosen.code;
+    });
+    return out;
+  }
+
+  function sortOptions(options) {
+    const arr = options.slice();
+    if (sortMode === "price") {
+      arr.sort((a, b) => a.price.total - b.price.total);
+    } else if (sortMode === "kcal") {
+      arr.sort((a, b) => {
+        const ka = a.nutrition ? a.nutrition.kcal : Infinity;
+        const kb = b.nutrition ? b.nutrition.kcal : Infinity;
+        return ka - kb;
+      });
+    } else if (sortMode === "count") {
+      arr.sort((a, b) => b.count - a.count);
+    } else {
+      arr.sort((a, b) => Math.abs(a.delta) - Math.abs(b.delta));
+    }
+    return arr;
+  }
+
+  function drawOptions(options) {
+    const out = $("plan-out");
+    if (!options.length) {
+      out.innerHTML = `<div class="plan-empty">这个预算下没算出合适的组合，试着拖大一点</div>`;
+      return;
+    }
+    const showNut = (lastPlan && lastPlan.health_focus) || sortMode === "kcal";
+
+    out.innerHTML = options.map((o) => {
+      const optIndex = lastPlan ? lastPlan.options.indexOf(o) : 0;
+      const over = o.delta > 0;
+      const sign = over ? "+" : (o.delta < 0 ? "−" : "");
+      const deltaText = o.delta === 0 ? "刚好" : `${sign}¥${Math.abs(o.delta).toFixed(1)}`;
+      const items = o.items.map((it) => esc(it.name)).join(" + ");
+      const save = o.price.original > o.price.total ? `<s>¥${o.price.original}</s>` : "";
+      const kcalChip = (showNut && o.nutrition)
+        ? `<span>${o.nutrition.kcal} kcal</span>` : "";
+      const subs = (o.nutrition && o.nutrition.substitutions) || [];
+      const subLine = (showNut && subs.length)
+        ? `<div class="opt-sub-line">＊${subs
+            .map((s) => `${esc(s.from)} 按「${esc(s.to)}」估算`)
+            .join("；")}</div>`
+        : "";
+      const nut = (showNut && o.nutrition)
+        ? `<div class="opt-nut">🔥 ${esc(o.nutrition.line)}</div>${subLine}`
+        : "";
+      return `<div class="opt-card">
+        <div class="opt-top">
+          <span class="opt-tag">${esc(o.tag)}</span>
+          <span class="opt-delta ${over ? "over" : "under"}">${deltaText}</span>
+        </div>
+        <div class="opt-items">${items}</div>
+        <div class="opt-price">¥${o.price.total}${save}</div>
+        <div class="opt-meta"><span>${o.count} 样</span>${kcalChip}</div>
+        ${o.coupon ? `<div class="opt-coupon">已用券：${esc(o.coupon.title)}</div>` : ""}
+        ${nut}
+        ${renderPicked(o.items, optIndex)}
+        <div class="opt-reason">${esc(o.reason)}</div>
+        <button class="add-btn" data-opt="${optIndex}">＋ 加入购物车</button>
+      </div>`;
+    }).join("");
+  }
+
+  function renderPlan(d) {
+    lastPlan = d;
+    const store = d.store || {};
+    const box = $("plan-store");
+    if (store.storeName) {
+      const distance = (store.distance != null) ? ` · 距你 ${store.distance} 米` : "";
+      box.innerHTML =
+        `<span class="ps-name">📍 ${esc(store.storeName)}</span>` +
+        `<span class="ps-meta">${esc(store.address || "")}${distance}</span>`;
+      box.classList.remove("hidden");
+    } else {
+      box.classList.add("hidden");
+    }
+    drawOptions(sortOptions(d.options));
+  }
+
+  async function bindCoupons() {
+    const btn = $("bind");
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "领取中…";
+    try {
+      const res = await fetch("/api/coupons/bind", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "领取失败");
+      if (data.claimed > 0) {
+        toast(`已领取 ${data.claimed} 张优惠券`);
+        btn.textContent = `已领取 ${data.claimed} 张 ✓`;
+      } else {
+        toast(data.message || "暂无可领取的优惠券");
+        btn.textContent = "暂无可领的券";
+      }
+      return;
+    } catch (err) {
+      toast("失败：" + err.message);
+      btn.textContent = label;
+      btn.disabled = false;
+    }
+  }
+
+  function syncBudget() {
+    $("budget-val").textContent = $("budget").value;
+  }
+
+  function renderStores(stores) {
+    const box = $("store-list");
+    box.classList.remove("hidden");
+    if (!stores.length) {
+      box.innerHTML = `<div class="store-empty">附近没查到门店</div>`;
+      selectedStore = null;
+      return;
+    }
+    selectedStore = stores[0];
+    box.innerHTML = stores.map((s, i) => {
+      const closed = s.businessStatus === false
+        ? ` <span class="si-closed">休息中</span>` : "";
+      return `<div class="store-item${i === 0 ? " on" : ""}" data-code="${esc(s.storeCode)}">
+        <span class="si-name">${esc(s.storeName)}${closed}</span>
+        <span class="si-meta">${esc(s.address || "")} · ${s.distance} 米</span>
+      </div>`;
+    }).join("");
+    box.querySelectorAll(".store-item").forEach((el) => {
+      el.addEventListener("click", () => {
+        box.querySelectorAll(".store-item").forEach((x) => x.classList.remove("on"));
+        el.classList.add("on");
+        selectedStore = stores.find((s) => s.storeCode === el.dataset.code) || null;
+      });
+    });
+  }
+
+  async function findStores() {
+    const city = $("city").value.trim();
+    if (!city) { toast("先填城市或地址"); return; }
+    const btn = $("find");
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "查询中…";
+    try {
+      const res = await fetch("/api/stores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ city }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "查询失败");
+      renderStores(data.stores || []);
+      $("plan-hint").textContent =
+        `找到 ${(data.stores || []).length} 家门店，已按距离排序，点一下选中`;
+    } catch (err) {
+      toast("失败：" + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+  }
+
+  function saveCart() {
+    try { localStorage.setItem("mdti_cart", JSON.stringify(cart)); } catch (_) { /* 忽略 */ }
+  }
+
+  function loadCart() {
+    try {
+      const raw = localStorage.getItem("mdti_cart");
+      cart = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(cart)) cart = [];
+    } catch (_) {
+      cart = [];
+    }
+  }
+
+  function saveLastOrder() {
+    try {
+      if (lastOrder) localStorage.setItem("mdti_last_order", JSON.stringify(lastOrder));
+      else localStorage.removeItem("mdti_last_order");
+    } catch (_) { /* 忽略 */ }
+  }
+
+  function loadLastOrder() {
+    try {
+      const raw = localStorage.getItem("mdti_last_order");
+      lastOrder = raw ? JSON.parse(raw) : null;
+    } catch (_) {
+      lastOrder = null;
+    }
+  }
+
+  function showNotice(message, badItems) {
+    const box = $("cart-notice");
+    const bad = (badItems || []).filter((b) => b && b.productCode);
+    const names = bad.map((b) => b.name).filter(Boolean);
+    box.innerHTML =
+      `<b>有商品暂时下不了单</b><br>${esc(message)}` +
+      (names.length ? `<br>建议移除：${names.map((n) => esc(n)).join("、")}` : "") +
+      (bad.length ? `<div style="margin-top:8px"><button class="btn ghost sm" id="notice-remove">移除这些商品</button></div>` : "");
+    box.classList.remove("hidden");
+
+    const btn = $("notice-remove");
+    if (btn) {
+      btn.addEventListener("click", () => {
+        const codes = new Set(bad.map((b) => String(b.productCode)));
+        cart = cart.filter((entry) => !entry.items.some((it) => codes.has(String(it.productCode))));
+        saveCart();
+        renderCartButton();
+        clearNotice();
+        renderCart();
+        toast("已移除售罄商品");
+      });
+    }
+  }
+
+  function clearNotice() {
+    const box = $("cart-notice");
+    box.classList.add("hidden");
+    box.innerHTML = "";
+  }
+
+  function renderLastOrder() {
+    const box = $("cart-last");
+    if (!lastOrder) {
+      box.classList.add("hidden");
+      box.innerHTML = "";
+      return;
+    }
+    box.classList.remove("hidden");
+    const cancelled = String(lastOrder.status || "").indexOf("取消") >= 0;
+    box.innerHTML =
+      `<div class="lo-head">最近订单 · ${esc(lastOrder.status || "待支付")}</div>` +
+      `<div class="lo-meta">${esc(lastOrder.orderId || "")} · ¥${esc(String(lastOrder.total || ""))}</div>` +
+      (cancelled
+        ? ""
+        : `<div class="lo-actions">` +
+          (lastOrder.payUrl
+            ? `<a class="btn pay" href="${esc(lastOrder.payUrl)}" target="_blank" rel="noopener">去支付</a>`
+            : "") +
+          `<button class="btn ghost" id="lo-cancel">取消订单</button></div>`);
+
+    const cancelBtn = $("lo-cancel");
+    if (cancelBtn) cancelBtn.addEventListener("click", cancelLastOrder);
+  }
+
+  async function cancelLastOrder() {
+    if (!lastOrder || !lastOrder.orderId) return;
+    if (!confirm("确定取消这个订单吗？")) return;
+    try {
+      const res = await fetch("/api/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: lastOrder.orderId, reasonCode: "1" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "取消失败");
+      lastOrder.status = "订单已取消";
+      lastOrder.payUrl = "";
+      saveLastOrder();
+      renderLastOrder();
+      toast("订单已取消");
+    } catch (err) {
+      toast("取消失败：" + err.message);
+    }
+  }
+
+  function cartEntryKey(storeCode, items) {
+    const sig = items
+      .map((it) => `${it.productCode}:${JSON.stringify(it.selections || {})}`)
+      .join(",");
+    return `${storeCode}|${sig}`;
+  }
+
+  function cartItemsPayload() {
+    const out = [];
+    cart.forEach((entry) => {
+      entry.items.forEach((it) => {
+        out.push({
+          productCode: it.productCode,
+          selections: it.selections || {},
+          quantity: entry.quantity,
+        });
+      });
+    });
+    return out;
+  }
+
+  function renderCartButton() {
+    const btn = $("cart-btn");
+    if (!cart.length) {
+      btn.classList.add("hidden");
+      return;
+    }
+    btn.classList.remove("hidden");
+    const pieces = cart.reduce((sum, entry) => sum + entry.quantity, 0);
+    const total = cart.reduce((sum, entry) => sum + entry.price.total * entry.quantity, 0);
+    btn.textContent = `🛒 ${pieces} 件 · ¥${total.toFixed(1)}`;
+  }
+
+  function addToCart(optIndex) {
+    if (!lastPlan || !lastPlan.options[optIndex]) return;
+    const option = lastPlan.options[optIndex];
+
+    if (cart.length && cart[0].storeCode !== lastPlan.store.storeCode) {
+      if (!confirm("购物车里已经有别的门店的商品，要清空重来吗？")) return;
+      cart = [];
+    }
+
+    const items = option.items.map((it) => ({
+      productCode: it.code,
+      name: it.name,
+      selections: selectionsOf(it),
+    }));
+    const key = cartEntryKey(lastPlan.store.storeCode, items);
+    const found = cart.find((entry) => entry.key === key);
+
+    if (found) {
+      found.quantity += 1;
+    } else {
+      cart.push({
+        key,
+        storeCode: lastPlan.store.storeCode,
+        storeName: lastPlan.store.storeName,
+        typeName: lastPlan.type.name,
+        items,
+        price: option.price,
+        quantity: 1,
+      });
+    }
+
+    saveCart();
+    renderCartButton();
+    toast("已加入购物车");
+  }
+
+  function renderCart() {
+    const box = $("cart-items");
+    const foot = $("cart-foot");
+    renderLastOrder();
+    if (!cart.length) {
+      box.innerHTML = `<div class="cart-empty">购物车还是空的</div>`;
+      foot.innerHTML = "";
+      return;
+    }
+
+    box.innerHTML = cart.map((entry, index) => {
+      const names = entry.items.map((it) => esc(it.name)).join(" + ");
+      return `<div class="cart-row">
+        <div class="cr-main">
+          <div class="cr-name">${names}</div>
+          <div class="cr-meta">${esc(entry.storeName)} · ¥${entry.price.total} × ${entry.quantity}</div>
+        </div>
+        <button class="cr-del" data-i="${index}">删除</button>
+      </div>`;
+    }).join("");
+
+    const total = cart.reduce((sum, entry) => sum + entry.price.total * entry.quantity, 0);
+    foot.innerHTML =
+      `<div class="cart-total">合计约 <b>¥${total.toFixed(2)}</b></div>` +
+      `<button class="btn" id="cart-checkout">结算</button>` +
+      `<button class="btn ghost" id="cart-clear">清空购物车</button>`;
+
+    $("cart-checkout").addEventListener("click", doCheckout);
+    $("cart-clear").addEventListener("click", () => {
+      cart = [];
+      saveCart();
+      renderCart();
+      renderCartButton();
+    });
+    box.querySelectorAll(".cr-del").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        cart.splice(Number(btn.dataset.i), 1);
+        saveCart();
+        renderCart();
+        renderCartButton();
+      });
+    });
+  }
+
+  async function doCheckout() {
+    if (!cart.length) return;
+    clearNotice();
+    const foot = $("cart-foot");
+    foot.innerHTML = `<div class="cart-total">正在算价…</div>`;
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storeCode: cart[0].storeCode, items: cartItemsPayload() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 409 && data.soldOut) {
+          showNotice(data.error || "有商品已售罄", data.badItems);
+        }
+        throw new Error(data.error || "结算失败");
+      }
+
+      const ways = data.takeWayList || [];
+      foot.innerHTML =
+        `<div class="cart-total">实付 <b>¥${data.total}</b>` +
+        (data.discount > 0 ? ` <small>（已优惠 ¥${data.discount}）</small>` : "") + `</div>` +
+        `<div class="cart-ways">${ways
+          .map((w, i) => `<label><input type="radio" name="tw" value="${esc(w.code)}"${i === 0 ? " checked" : ""}> ${esc(w.title)}</label>`)
+          .join("")}</div>` +
+        `<button class="btn" id="cart-order">确认下单</button>`;
+      $("cart-order").addEventListener("click", doOrder);
+    } catch (err) {
+      toast("结算失败：" + err.message);
+      renderCart();
+    }
+  }
+
+  async function doOrder() {
+    const picked = document.querySelector('input[name="tw"]:checked');
+    clearNotice();
+    const foot = $("cart-foot");
+    foot.innerHTML = `<div class="cart-total">正在创建订单…</div>`;
+    try {
+      const res = await fetch("/api/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeCode: cart[0].storeCode,
+          items: cartItemsPayload(),
+          takeWay: picked ? picked.value : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 409 && data.soldOut) {
+          showNotice(data.error || "有商品已售罄", data.badItems);
+        }
+        throw new Error(data.error || "下单失败");
+      }
+
+      lastOrder = {
+        orderId: data.orderId,
+        status: data.status || "待支付",
+        total: data.total,
+        payUrl: data.payUrl,
+        takeWay: data.takeWay,
+        expirePayTime: data.expirePayTime,
+      };
+      saveLastOrder();
+
+      cart = [];
+      saveCart();
+      renderCartButton();
+      foot.innerHTML = `<div class="order-ok">✅ 订单已创建 · ${esc(lastOrder.status)}</div>`;
+      renderLastOrder();
+    } catch (err) {
+      toast("下单失败：" + err.message);
+      renderCart();
+    }
+  }
+
+  $("cart-btn").addEventListener("click", () => {
+    $("cart-panel").classList.remove("hidden");
+    renderCart();
+  });
+  $("cart-close").addEventListener("click", () => $("cart-panel").classList.add("hidden"));
+
+  async function applySwap(optIndex, itemIndex, roundId, code) {
+    const option = lastPlan && lastPlan.options[optIndex];
+    if (!option) return;
+    const item = option.items[itemIndex];
+    if (!item) return;
+
+    (item.rounds || []).forEach((r) => {
+      if (String(r.id) !== String(roundId)) return;
+      (r.choices || []).forEach((c) => { c.selected = c.code === code; });
+    });
+
+    const body = {
+      type: lastPlan.type.code,
+      storeCode: lastPlan.store.storeCode,
+      budget: lastPlan.budget,
+      items: option.items.map((it) => ({
+        productCode: it.code,
+        selections: selectionsOf(it),
+      })),
+    };
+
+    try {
+      const res = await fetch("/api/reprice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "重算失败");
+
+      option.price = data.price;
+      option.delta = data.delta;
+      option.delta_pct = data.delta_pct;
+      option.tag = data.tag;
+      option.reason = data.reason;
+      option.count = data.count;
+      option.nutrition = data.nutrition;
+      option.items = data.items;
+      drawOptions(sortOptions(lastPlan.options));
+      $("plan-hint").textContent =
+        `已换餐 · 现价 ¥${data.price.total} · ${data.calls} 次调用`;
+    } catch (err) {
+      toast("重算失败：" + err.message);
+    }
+  }
+
+  $("plan-out").addEventListener("click", (e) => {
+    const add = e.target.closest(".add-btn");
+    if (add) {
+      addToCart(Number(add.dataset.opt));
+      return;
+    }
+    const chip = e.target.closest(".rd-choice");
+    if (!chip) return;
+    applySwap(
+      Number(chip.dataset.opt),
+      Number(chip.dataset.item),
+      chip.dataset.round,
+      chip.dataset.code
+    );
+  });
+
+  async function fetchPlan() {
+    if (!current) return;
+    const city = $("city").value.trim();
+    if (!city) { toast("先填城市"); return; }
+    const btn = $("go");
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "在算…";
+    $("plan-hint").textContent = "第一次要拉菜单逐项算价，可能要十几秒…";
+    try {
+      const res = await fetch("/api/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: current.code,
+          city,
+          budget: Number($("budget").value),
+          storeCode: selectedStore ? selectedStore.storeCode : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "算方案失败");
+      planLoaded = true;
+      renderPlan(data);
+      $("plan-hint").textContent =
+        `预算 ¥${data.budget} · ${data.options.length} 个方案 · ${data.calls} 次调用`;
+    } catch (err) {
+      toast("失败：" + err.message);
+      $("plan-hint").textContent = "";
+    } finally {
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+  }
+
+  $("go").addEventListener("click", fetchPlan);
+  $("find").addEventListener("click", findStores);
+  $("bind").addEventListener("click", bindCoupons);
+  $("city").addEventListener("keydown", (e) => { if (e.key === "Enter") fetchPlan(); });
+  $("budget").addEventListener("input", syncBudget);
+  $("budget").addEventListener("change", () => {
+    syncBudget();
+    if (planLoaded) fetchPlan();
+  });
+  document.querySelectorAll("#sort-row .seg").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("#sort-row .seg").forEach((b) => b.classList.remove("on"));
+      btn.classList.add("on");
+      sortMode = btn.dataset.sort;
+      if (lastPlan) drawOptions(sortOptions(lastPlan.options));
+    });
+  });
+
+  $("start").addEventListener("click", () => {
+    answers = [];
+    show("quiz");
+    renderQuestion();
+  });
+  $("again").addEventListener("click", () => {
+    answers = [];
+    show("quiz");
+    renderQuestion();
+  });
+  $("share").addEventListener("click", copyShare);
+  $("all").addEventListener("click", () => { renderTypes(); show("types"); });
+  $("back").addEventListener("click", () => show("result"));
+
+  boot();
+})();
+</script>
+</body>
+</html>
