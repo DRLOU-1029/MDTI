@@ -314,6 +314,7 @@
   .order-ok { font-size: 14px; font-weight: 700; color: #1E7F4F; }
   .order-tip { font-size: 11px; color: var(--muted); }
   a.btn.pay { display: block; text-align: center; text-decoration: none; }
+  a.btn { display: block; text-align: center; text-decoration: none; box-sizing: border-box; }
   .cart-notice {
     background: #FDECEA; color: #B3261E; border-radius: 10px; padding: 10px 12px;
     font-size: 12px; line-height: 1.6; margin-bottom: 10px;
@@ -404,6 +405,7 @@
 
       <div class="actions">
         <button class="btn" id="share">复制分享文案</button>
+        <a class="btn ghost" href="https://github.com/DRLOU-1029/MDTI" target="_blank" rel="noopener">★ 去 GitHub 点个 Star</a>
         <button class="btn ghost" id="all">看全部十六型</button>
         <button class="btn ghost" id="again">再测一次</button>
       </div>
@@ -607,7 +609,11 @@
 
   function shareText() {
     if (!current) return "";
-    return `我是「${current.name}」· ${current.code}（${current.ascii}）\n${current.tagline}\n—— MDTI 麦门点餐人格`;
+    return `我是「${current.name}」· ${current.code}（${current.ascii}）\n`
+      + `${current.tagline}\n`
+      + `—— MDTI 麦门点餐人格\n`
+      + `测一下：http://49.234.44.131:1145\n`
+      + `https://github.com/DRLOU-1029/MDTI`;
   }
 
   async function copyShare() {
